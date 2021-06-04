@@ -2,6 +2,7 @@ const express = require("express");
 const { client } = require("../middlewares/client");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { verify } = require("../middlewares/auth");
 
 require("dotenv").config();
 
@@ -70,6 +71,34 @@ router.post("/login", async (req, res) => {
     const token = await jwt.sign({ id: existUser.id }, process.env.JWT_SECRET);
 
     return res.json({ ok: true, token });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).send(error);
+  }
+});
+
+router.get("/me", async (req, res) => {
+  try {
+    const verifyToken = await verify(req.headers.token);
+
+    if (!verifyToken.ok) {
+      return res.status(400).json({
+        ok: false,
+        error: "Token error",
+      });
+    }
+
+    const user = await client.user.findUnique({
+      where: {
+        id: verifyToken.verifyToken.id,
+      },
+      select: {
+        email: true,
+      },
+    });
+
+    return res.json({ ok: true, email: user.email });
   } catch (error) {
     console.error(error);
 
