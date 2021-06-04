@@ -1,7 +1,9 @@
 const express = require("express");
-const { client } = require("../client");
+const { client } = require("../middlewares/client");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+
+require("dotenv").config();
 
 const router = express.Router();
 
@@ -62,7 +64,12 @@ router.post("/login", async (req, res) => {
       return res.status(400).send("Wrong password.");
     }
 
-    return res.json(existUser);
+    // const token = await jwt.sign({ id: existUser.id }, process.env.JWT_SECRET, {
+    //   expiresIn: "1m",
+    // });
+    const token = await jwt.sign({ id: existUser.id }, process.env.JWT_SECRET);
+
+    return res.json({ ok: true, token });
   } catch (error) {
     console.error(error);
 
